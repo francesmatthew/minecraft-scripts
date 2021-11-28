@@ -1,0 +1,28 @@
+#!/bin/sh
+
+ALLOC_RAM="6144M"
+LIB_DIR="/usr/lib/minecraft/"
+JAVA_PARAMETERS=""
+SERVER_JAR="server.jar"
+
+# verify that the minecraft user is running the server
+if [ "$(id -nu)" != "minecraft" ]
+then
+ echo "mc-start: [error] must be run by minecraft user"
+ exit 1
+fi
+
+# create fifo pipes
+PIPEIN="/tmp/minecraft.in.fifo"
+mkfifo -m 760 $PIPEIN > /dev/null 2>&1
+# use cat to keep fifo open, this file will be deleted afterwards
+sleep infinity > $PIPEIN &
+echo $! > $PIPEIN.cat-pid
+
+echo "Starting Server"
+# pass fifo pipes into jre
+cd $LIB_DIR
+java -Xmx$ALLOC_RAM -Xms1024M $JAVA_PARAMETERS -jar $SERVER_JAR nogui < $PIPEIN > /dev/null 2>&1 &
+# store the PID of the java proccess
+echo $! > /run/minecraft.pid
+exit 0

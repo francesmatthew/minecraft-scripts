@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# verify all arguments were present
+if [ $# -lt "1" ]
+then
+ echo "mc-buildtools-update: [error] invalid syntax: mc-buildtools-update <version>"
+ exit 1
+fi
+
+LIB_DIR="/usr/lib/minecraft"
+
+mkdir /tmp/buildtools
+cd /tmp/buildtools
+
+wget -O BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+java -jar BuildTools.jar -rev $1
+
+mv /tmp/buildtools/spigot*.jar $LIB_DIR/server.jar
+cd /
+rm -Rf /tmp/buildtools/

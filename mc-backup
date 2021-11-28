@@ -1,0 +1,35 @@
+#!/bin/sh
+JAVAPID=`cat /run/minecraft.pid`
+PIPEIN="/tmp/minecraft.in.fifo"
+LIB_DIR="/usr/lib/minecraft/"
+BACKUP_DIR="/usr/lib/minecraft/backup/"
+BACKUP_TARGETS="world world_nether world_the_end"
+
+# verify that the minecraft user is running the script
+if [ "$(id -nu)" != "minecraft" ]
+then
+ echo "mc-backup: [error] not minecraft user, exiting"
+ exit 1
+fi
+
+# check that minecraft service is running
+pgrep -F /run/minecraft.pid > /dev/null 2>&1
+IS_ALIVE=$?
+
+if [ $IS_ALIVE -eq "0" ]
+then
+ DATE_TIME=`date +'%d-%m-%Y-%H-%M'`
+ # stop auto-saving
+ echo save-off > $PIPEIN
+ # copy save file
+ mkdir -p $BACKUP_DIR/$DATE_TIME
+ cd $LIB_DIR
+ cp -r -t $BACKUP_DIR/$DATE_TIME $BACKUP_TARGETS
+ # resume auto-saving
+ echo save-on > $PIPEIN
+ echo "say World Backup Complete" > $PIPEIN
+ exit 0
+else
+ echo "mc-backup: [error] minecraft service not running"
+ exit 1
+fi

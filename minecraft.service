@@ -1,0 +1,22 @@
+# /etc/systemd/system/minecraft.service
+[Unit]
+Description=script to start/stop instance of java edition minecraft
+After=network-online.target
+
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=forking
+User=minecraft
+Group=minecraft
+ExecStart=/usr/bin/minecraft/mc-start
+ExecStop=/usr/bin/minecraft/mc-stop
+ExecReload=/usr/bin/minecraft/mc-stop;/usr/bin/minecraft/mc-start
+PIDFile=/run/minecraft.pid
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

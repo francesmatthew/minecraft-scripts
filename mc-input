@@ -1,0 +1,28 @@
+#!/bin/sh
+
+PIPEIN="/tmp/minecraft.in.fifo"
+
+# test that a command was passed
+if [ $# -lt "1" ]
+then
+ echo "mc-input: [error] invalid syntax"
+ exit 1
+fi
+
+#if user is root, execute command as minecraft user
+if [ "$(id -u)" = "0" ]
+then
+ runuser -c 'echo "$@" > "$PIPEIN"' minecraft
+ exit $?
+fi
+
+# verify that the minecraft user is running the script
+if [ "$(id -nu)" = "minecraft" ]
+then
+ echo "$@" > ${PIPEIN}
+ exit $?
+fi
+
+# otherwise, the minecraft user is not running the script
+echo "mc-input: [error] not minecraft user, exiting"
+exit 1

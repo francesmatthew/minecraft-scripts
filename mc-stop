@@ -1,0 +1,51 @@
+#!/bin/sh
+
+JAVAPID=`cat /run/minecraft.pid`
+
+PIPEIN="/tmp/minecraft.in.fifo"
+
+SCRIPT_DIR="/usr/bin/minecraft"
+
+#if user is root, issue stop command as minecraft user
+if [ "$(id -u)" = "0" ]
+then
+ runuser -c "echo stop > $PIPEIN" minecraft
+fi
+
+# verify that the minecraft user is running the script
+if [ "$(id -nu)" = "minecraft" ]
+then
+ echo stop > $PIPEIN
+else
+ #otherwise, the minecraft user is not running the script
+ echo "mc-stop: [error] not minecraft user, exiting"
+ exit 1
+fi
+
+WAITSECS="0"
+MAXWAITSECS="60"
+pgrepTest()
+{
+ pgrep -F /run/minecraft.pid > /dev/null 2>&1
+ PGREPEXIT=$?
+}
+# wait until the process ends
+pgrepTest
+until [ $PGREPEXIT -ne "0" ]
+do
+ if [ $WAITSECS -ge $MAXWAITSECS ]
+ then
+ # forcible kill the process
+ kill -9 $JAVAPID > /dev/null 2>&1
+ fi
+ sleep 1
+ pgrepTest
+ WAITSECS=`expr $WAITSECS + 1`
+done
+
+# remove the cat process keeping the fifo open
+kill -9 `cat $PIPEIN.cat-pid` >  /dev/null 2>&1
+# clean up fifo
+rm -f $PIPEIN.cat-pid
+rm -f $PIPEIN
+exit 0
